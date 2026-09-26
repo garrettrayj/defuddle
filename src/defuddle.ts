@@ -1,4 +1,5 @@
 import { MetadataExtractor } from './metadata';
+import { preserveSelectedContent } from './preserve';
 import { DefuddleOptions, DefuddleResponse, MetaTagItem, DebugRemoval } from './types';
 import { ExtractorRegistry } from './extractor-registry';
 import type { ExtractorOptions } from './extractors/_base';
@@ -921,7 +922,7 @@ export class Defuddle {
 			profileStep('applyMobileStyles', () => this.applyMobileStyles(clone, mobileStyles));
 
 			// Find main content
-			const mainContent = profileStep('findMainContent', (): Element | null => {
+			let mainContent = profileStep('findMainContent', (): Element | null => {
 				let found: Element | null = null;
 				if (options.contentSelector) {
 					found = clone.querySelector(options.contentSelector);
@@ -966,6 +967,8 @@ export class Defuddle {
 					metaTags: pageMetaTags
 				};
 			}
+
+			const restorePreservedContent = preserveSelectedContent(mainContent, options.preserveSelectors);
 
 			// Remove h1-adjacent date/author metadata blocks from the content.
 			// These are extracted as frontmatter but also appear in the body when a
@@ -1070,6 +1073,9 @@ export class Defuddle {
 			if (bestCoverUrl) {
 				metadata.image = bestCoverUrl;
 			}
+
+			mainContent = restorePreservedContent();
+			this.resolveRelativeUrls(mainContent);
 
 			// Neutralizing an unsafe root strips the selector's id/class.
 			const debugSelector = this.debug ? this.getElementSelector(mainContent) : '';
@@ -1820,8 +1826,9 @@ export class Defuddle {
 		container.appendChild(parseHTML(this.doc, html));
 		this._stripUnsafeElements(container);
 		this.resolveRelativeUrls(container);
+		const restorePreservedContent = preserveSelectedContent(container, this.options.preserveSelectors);
 		standardizeExtractorOutput(container, this.debug);
-		return serializeHTML(container);
+		return serializeHTML(restorePreservedContent());
 	}
 
 	/**

@@ -126,6 +126,13 @@ export interface DefuddleOptions {
 	contentSelector?: string;
 
 	/**
+	 * Preserve matching subtrees within the extracted content through cleanup,
+	 * including their classes and data attributes. Invalid selectors are ignored.
+	 * URL resolution and security sanitization still apply. Defaults to [].
+	 */
+	preserveSelectors?: string[];
+
+	/**
 	 * Preferred language for content extraction (BCP 47 tag, e.g. 'en', 'fr', 'ja')
 	 * Used as Accept-Language header when fetching pages and to select
 	 * transcript language tracks in extractors like YouTube

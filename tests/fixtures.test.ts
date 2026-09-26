@@ -102,7 +102,7 @@ describe('Fixtures Tests', () => {
     // where 1234567890 resolved to a real account). Failing the fetch forces the
     // deterministic DOM-extraction path the fixtures are written to exercise.
     const offlineFetch = (() => Promise.reject(new Error('network disabled in fixture tests'))) as unknown as typeof fetch;
-    const response = await Defuddle(doc, url, { separateMarkdown: true, fetch: offlineFetch });
+    const response = await Defuddle(doc, url, { separateMarkdown: true, fetch: offlineFetch, preserveSelectors: frontmatter.preserveSelectors });
     const result = createComparableResult(response);
     const expected = loadExpectedResult(name);
     
