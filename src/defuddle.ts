@@ -1,4 +1,5 @@
 import { MetadataExtractor } from './metadata';
+import { preserveSelectedContent } from './preserve';
 import { DefuddleOptions, DefuddleMetadata, DefuddleResponse, MetaTagItem, DebugRemoval } from './types';
 import { ExtractorRegistry } from './extractor-registry';
 import type { ExtractorOptions } from './extractors/_base';
@@ -929,7 +930,7 @@ export class Defuddle {
 			profileStep('applyMobileStyles', () => this.applyMobileStyles(clone, mobileStyles));
 
 			// Find main content
-			const mainContent = profileStep('findMainContent', (): Element | null => {
+			let mainContent = profileStep('findMainContent', (): Element | null => {
 				let found: Element | null = null;
 				if (options.contentSelector) {
 					try {
@@ -975,6 +976,7 @@ export class Defuddle {
 			// Generate before removals and unsafe-root neutralization, so sibling
 			// positions, id, and classes match the DOM a contentSelector retry queries.
 			const debugSelector = this.debug ? this.getElementSelector(mainContent) : '';
+			const restorePreservedContent = preserveSelectedContent(mainContent, options.preserveSelectors);
 
 			// Remove h1-adjacent date/author metadata blocks from the content.
 			// These are extracted as frontmatter but also appear in the body when a
@@ -1079,6 +1081,9 @@ export class Defuddle {
 			if (bestCoverUrl) {
 				metadata.image = bestCoverUrl;
 			}
+
+			mainContent = restorePreservedContent();
+			this.resolveRelativeUrls(mainContent);
 
 			// Strip dangerous elements and URI attributes from the final output.
 			// Runs unconditionally — the pipeline steps above are all optional, so
@@ -1823,8 +1828,9 @@ export class Defuddle {
 		container.appendChild(parseHTML(this.doc, html));
 		this._stripUnsafeElements(container);
 		this.resolveRelativeUrls(container);
+		const restorePreservedContent = preserveSelectedContent(container, this.options.preserveSelectors);
 		standardizeExtractorOutput(container, this.debug);
-		return serializeHTML(container);
+		return serializeHTML(restorePreservedContent());
 	}
 
 	/**
