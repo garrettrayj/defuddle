@@ -194,10 +194,29 @@ The core bundle is recommended for most use cases. It still handles math content
 | `removeSmallImages`      | boolean | true    | Remove small images (icons, tracking pixels, etc.)                        |
 | `removeImages`           | boolean | false   | Remove images.                                                            |
 | `standardize`            | boolean | true    | Standardize HTML (footnotes, headings, code blocks, etc.)                 |
+| `preserveSelectors`      | string[] | []      | Preserve matching content subtrees through cleanup; sanitization still applies. |
 | `contentSelector`        | string  |         | CSS selector to use as the main content element, bypassing auto-detection |
 | `useAsync`               | boolean | true    | Allow async extractors to fetch from third-party APIs when no local content is available. |
 | `language`               | string  |         | Preferred language (BCP 47 tag, e.g. `en`, `fr`). Sets `Accept-Language` header and selects transcript language. |
 | `includeReplies`         | boolean \| 'extractors' | 'extractors' | Include replies: `'extractors'` for site-specific extractors only, `true` for all, `false` for none. |
+
+### Preserving selected HTML
+
+Use `preserveSelectors` to retain embed markup (including classes, data attributes,
+and descendants) through filtering and standardization:
+
+```javascript
+const result = new Defuddle(document, {
+  preserveSelectors: ['.twitter-tweet', '.instagram-media', '.tiktok-embed', '.reddit-embed']
+}).parse();
+```
+
+Matches are limited to the selected article content; this does not pull embeds
+from elsewhere on the page. Nested matches are preserved once. Invalid selectors
+are ignored. Relative URLs are still resolved and unsafe elements, event handlers,
+and dangerous URLs are still sanitized. Embed scripts must be loaded by the reader.
+Site-specific extractors can only preserve markup present in their extracted HTML.
+The default empty list leaves normal cleanup unchanged.
 
 ## HTML standardization
 
